@@ -43,7 +43,7 @@ func BenchmarkGoroutine(b *testing.B) {
 
 	b.Run("use array", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			UseChannel()
+			UseArray()
 		}
 	})
 }
