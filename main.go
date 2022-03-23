@@ -77,7 +77,7 @@ func UseMutex() int {
 
 func UseArray() int {
 	var (
-		temp [2]int
+		temp = make([]int, totalExecution)
 		sum  int
 		wg   = new(sync.WaitGroup)
 	)
@@ -93,8 +93,9 @@ func UseArray() int {
 	}
 	wg.Wait()
 
-	for i := 0; i < totalExecution; i++ {
-		sum += temp[i]
+	// total values ​​in array
+	for _, v := range temp {
+		sum += v
 	}
 
 	return sum
