@@ -5,31 +5,97 @@ import (
 )
 
 var (
-	total      = make(chan int)
-	deposit    = 0
-	concurrent = 1000000
+	concurrent     = 1000000
+	totalExecution = 2
 )
 
-func topup() {
-	deposit = deposit + 1
+func main() {
+	UseArray()
 }
 
-func execute(wg *sync.WaitGroup) {
-	defer wg.Done()
-	for i := 1; i <= concurrent; i++ {
-		topup()
+func Synchronous() int {
+	var (
+		deposit = 0
+	)
+
+	for i := 1; i <= totalExecution; i++ {
+		func() {
+			for i := 1; i <= concurrent; i++ {
+				deposit = deposit + 1
+			}
+		}()
 	}
-	total <- deposit
+
+	return deposit
 }
-func main() {
-	totalExecution := 2
-	wg := new(sync.WaitGroup)
+
+func UseChannel() int {
+	var (
+		deposit = 0
+		total   = make(chan int)
+		wg      = new(sync.WaitGroup)
+	)
 	wg.Add(totalExecution)
 
 	for i := 1; i <= totalExecution; i++ {
-		go execute(wg)
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			for i := 1; i <= concurrent; i++ {
+				deposit = deposit + 1
+			}
+			total <- deposit
+		}(wg)
 		<-total
 	}
 
 	wg.Wait()
+	return deposit
+}
+
+func UseMutex() int {
+	var (
+		mtx     sync.Mutex
+		deposit = 0
+		wg      = new(sync.WaitGroup)
+	)
+	wg.Add(totalExecution)
+
+	for i := 1; i <= totalExecution; i++ {
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			for i := 1; i <= concurrent; i++ {
+				mtx.Lock()
+				deposit = deposit + 1
+				mtx.Unlock()
+			}
+		}(wg)
+	}
+
+	wg.Wait()
+	return deposit
+}
+
+func UseArray() int {
+	var (
+		temp [2]int
+		sum  int
+		wg   = new(sync.WaitGroup)
+	)
+
+	wg.Add(totalExecution)
+	for i := 0; i < totalExecution; i++ {
+		go func(wg *sync.WaitGroup, index int) {
+			defer wg.Done()
+			for i := 1; i <= concurrent; i++ {
+				temp[index] = temp[index] + 1
+			}
+		}(wg, i)
+	}
+	wg.Wait()
+
+	for i := 0; i < totalExecution; i++ {
+		sum += temp[i]
+	}
+
+	return sum
 }
